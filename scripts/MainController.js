@@ -15,35 +15,41 @@
         // The model object that we reference
         // on the  element in index.html
         vm.model = {obs:{}};
-        var o;
+        var o, obs;
 
-        function getModel(obsConceptUuid,obsGroupUuid,groupName) {
-            if(obsGroupUuid === undefined) {
-                if(obsConceptUuid in vm.model.obs) {
-                    vm.model.obs[obsConceptUuid].push({concept:obsConceptUuid});
+
+        /*
+        params: obsConceptUuid, obsGroupUuid, groupName, isCheckbox, checkboxValue
+         */
+        function getModel(params) {
+            if(params.obsGroupUuid === undefined) {
+                obs = {concept:params.obsConceptUuid};
+                if(params.isCheckbox) obs.value = params.checkboxValue;
+
+                if(params.obsConceptUuid in vm.model.obs) {
+                    vm.model.obs[params.obsConceptUuid].push(obs);
                 }
                 else {
-                    vm.model.obs[obsConceptUuid] = [{concept:obsConceptUuid}];
+                    vm.model.obs[params.obsConceptUuid] = [obs];
                 }
-                o = (vm.model.obs[obsConceptUuid]);
-                //return vm.model.obs[obsConceptUuid][0];
+                o = (vm.model.obs[params.obsConceptUuid]);
                 return o[o.length-1];
             }
 
 
-            if(vm.model.obs[obsGroupUuid] === undefined) {
-                vm.model.obs[obsGroupUuid] = {};
+            if(vm.model.obs[params.obsGroupUuid] === undefined) {
+                vm.model.obs[params.obsGroupUuid] = {};
             }
-            if(groupName in vm.model.obs[obsGroupUuid])
-                (vm.model.obs[obsGroupUuid][groupName]).obs.push({concept:obsConceptUuid});
+            if(params.groupName in vm.model.obs[params.obsGroupUuid])
+                (vm.model.obs[params.obsGroupUuid][params.groupName]).obs.push({concept:params.obsConceptUuid});
             else {
-                vm.model.obs[obsGroupUuid][groupName] =
+                vm.model.obs[params.obsGroupUuid][params.groupName] =
                 {
-                    concept: obsGroupUuid,
-                    obs: [{uuid: obsConceptUuid}]
+                    concept: params.obsGroupUuid,
+                    obs: [{uuid: params.obsConceptUuid}]
                 };
             }
-            o = (vm.model.obs[obsGroupUuid][groupName]).obs;
+            o = (vm.model.obs[params.obsGroupUuid][params.groupName]).obs;
 
             return o[o.length-1];
 
@@ -52,13 +58,14 @@
         // and options set. We make reference to this in
         // the 'fields' attribute on the  element
 
+
         vm.fields = [
             {
-                key: 'value',
-                type: 'input',
-                model: getModel("durationConceptUuid"),
+                key: 'checked',
+                type: 'checkbox',
+                model: getModel({obsConceptUuid:"durationConceptUuid",isCheckbox:true,checkboxValue:'100'}),
                 templateOptions: {
-                    type: 'text',
+                    type: 'checkbox',
                     label: 'Duration',
                     placeholder: 'Enter duration',
                     required: true
@@ -70,7 +77,7 @@
                 fieldGroup: [
                     {
                         key: 'value',
-                        model: getModel("medicineConceptUuid","orderUuid","obsGroup1"),
+                        model: getModel({obsConceptUuid:"medicineConceptUuid",obsGroupUuid:"orderUuid",groupName:"obsGroup1"}),
                         type: 'input',
                         templateOptions: {
                             type: 'text',
@@ -82,7 +89,7 @@
                     {
                         key: 'value',
                         type: 'input',
-                        model: getModel("doseConceptUuid","orderUuid","obsGroup1"),
+                        model: getModel({obsConceptUuid:"doseConceptUuid",obsGroupUuid:"orderUuid",groupName:"obsGroup1"}),
                         templateOptions: {
                             type: 'text',
                             label: 'Dose',
@@ -98,7 +105,7 @@
                 fieldGroup: [
                     {
                         key: 'value',
-                        model: getModel("medicineConceptUuid","orderUuid","obsGroup2"),
+                        model: getModel({obsConceptUuid:"medicineConceptUuid",obsGroupUuid:"orderUuid",groupName:"obsGroup2"}),
                         type: 'input',
                         templateOptions: {
                             type: 'text',
@@ -110,7 +117,7 @@
                     {
                         key: 'value',
                         type: 'input',
-                        model: getModel("doseConceptUuid","orderUuid","obsGroup2"),
+                        model: getModel({obsConceptUuid:"doseConceptUuid",obsGroupUuid:"orderUuid",groupName:"obsGroup2"}),
                         templateOptions: {
                             type: 'text',
                             label: 'Dose',
