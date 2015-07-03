@@ -8,20 +8,12 @@
         .module('formlyApp')
         .controller('MainController', MainController);
 
-    function MainController(province) {
+    function MainController() {
 
         var vm = this;
 
         // The model object that we reference
         // on the  element in index.html
-        vm.model =
-        {
-            obs:
-            {
-                "durationConceptUuid":[{"concept":"durationConceptUuid",value:"100"}]
-            }
-        };
-
         vm.model = {
             "obs":
             {
@@ -36,7 +28,7 @@
                         "concept":"orderUuid",
                         "obs": {
                             medicineConceptUuid: [{uuid:"1987293", "concept": "medicineConceptUuid", "value": "quinineUuid"}],
-                            doseConceptUuid: [{uuid:"3298098", "concept": "doseConceptUuid", "value": "500mg"}]
+                            doseConceptUuid: [{uuid:"3298098", "concept": "doseConceptUuid", "value": "500mg", checked:true}]
                         }
                     }
                 }
@@ -49,77 +41,134 @@
             return array[array.length-1];
         }
 
-        function getFirstNonLoaded(obs) {
-            var result;
-            _.each(obs,function(e) {
+
+        function getFirstNonLoaded(obsSet,params) {
+            var result, fieldDef;
+            _.each(obsSet,function(e) {
                 if(e.loaded === undefined) {
-                    result = e;
+                    if(!params.isCheckbox || (params.isCheckbox && e.value === params.checkboxValue)) {
+                        result = e;
+                        return;
+                    }
                 }
             });
             return result;
         }
 
-        /*
-        params: obsConceptUuid, obsGroupUuid, groupName, isCheckbox, checkboxValue
-         */
-        function getModel(params) {
-            obs = {concept:params.obsConceptUuid};
+
+        function getModelForObsConcept(obsGroup,params) {
+            var m;
+            var obs = {concept:params.obsConceptUuid};
             if(params.isCheckbox) obs.value = params.checkboxValue;
 
-            if(params.obsGroupUuid === undefined) {
-                if(params.obsConceptUuid in vm.model.obs) {
-                    var e = getLast(vm.model.obs[params.obsConceptUuid]);
-                    if(e.loaded)
-                        vm.model.obs[params.obsConceptUuid].push(obs);
+            if(params.obsConceptUuid in obsGroup) {
+
+                if(params.addField) {
+                    m = obs;
+                    obsGroup[params.obsConceptUuid].push(obs);
+                }
+                else {
+                    m = getFirstNonLoaded(obsGroup[params.obsConceptUuid], params);
+                    if (m === undefined) {
+
+                        /*
+                        ** NEED TO ADD WAY TO ADD FIELD IF IN MODEL BUT NOT IN FIELDSET, E.G. A FIELD WAS ADDED
+                        ** AT DATA ENTRY TIME
+                        _.each(vm.fields,function(f){
+                            console.log(f);
+                            if(f.uuid !== undefined) console.log(f.uuid);
+                        });
+                        */
+
+                        obsGroup[params.obsConceptUuid].push(obs);
+                        m = obs;
+
+                    }
                     else {
-                        e.loaded = true;
-                        e.initialValue = e.value;
-                        return e;
+                        if (params.isCheckbox) m.checked = true;
+                        m.loaded = true;
+                        m.initialValue = m.value;
                     }
                 }
-                else {
-                    vm.model.obs[params.obsConceptUuid] = [obs];
-                }
-                return getLast((vm.model.obs[params.obsConceptUuid]));
-            }
-
-
-            if(vm.model.obs[params.obsGroupUuid] === undefined) {
-                vm.model.obs[params.obsGroupUuid] = {};
-            }
-
-            if(params.groupName in vm.model.obs[params.obsGroupUuid]) {
-
-                obs = vm.model.obs[params.obsGroupUuid][params.groupName].obs;
-                e = getFirstNonLoaded(obs[params.obsConceptUuid]);
-                if(!e)
-                    (vm.model.obs[params.obsGroupUuid][params.groupName]).obs.push({concept: params.obsConceptUuid});
-                else {
-                    e.loaded = true;
-                    e.initialValue = e.value;
-                    return e;
-                }
-
             }
             else {
-                vm.model.obs[params.obsGroupUuid][params.groupName] =
+                obsGroup[params.obsConceptUuid] = [obs];
+                m = obsGroup[params.obsConceptUuid][0];
+            }
+            return m;
+        }
+
+
+        /*
+         params: obsConceptUuid, obsGroupUuid, groupName, isCheckbox, checkboxValue
+         */
+        function getModelForObsGroup(obsGroup,params) {
+            if(obsGroup[params.obsGroupUuid] === undefined) {
+                obsGroup[params.obsGroupUuid] = {};
+            }
+            var m,g;
+            if(params.groupName in obsGroup[params.obsGroupUuid]) {
+                g = obsGroup[params.obsGroupUuid][params.groupName].obs;
+                m = getModelForObsConcept(g,params);
+            }
+            else {
+                obsGroup[params.obsGroupUuid][params.groupName] =
                 {
                     concept: params.obsGroupUuid,
                     obs: [{concept: params.obsConceptUuid}]
                 };
+                m = obsGroup[params.obsGroupUuid][params.groupName]["obs"][0]
             }
-            return getLast((vm.model.obs[params.obsGroupUuid][params.groupName]).obs);
+            return m;
         }
+
+
+        function getModel(params) {
+            if(params.obsGroupUuid !== undefined) {
+                return getModelForObsGroup(vm.model.obs,params);
+            }
+            else {
+                return getModelForObsConcept(vm.model.obs,params);
+            }
+        }
+
+
+        vm.addField = function(fieldDef) {
+            vm.fields.push(fieldDef);
+        }
+
+
+        vm.buildOpenmrsRestPayload = function(formObs) {
+            var payload = [];
+            // Need to write code
+            return payload;
+        }
+
+        vm.loadOpenmrsRestResult = function(restResult) {
+
+        }
+
         // An array of our form fields with configuration
         // and options set. We make reference to this in
         // the 'fields' attribute on the  element
+
+        var f =
+        {
+            uuid:'uuid',
+            groupUuid:'groupUuid',
+            label:'label',
+            type:'checkbox',
+            options:{},
+            checkboxValue:"value",
+            placeholder:'placeHolder',
+        }
 
 
         vm.fields = [
             {
                 key: 'value',
                 type: 'input',
-                model: getModel({obsConceptUuid:"durationConceptUuid"}),
+                model: getModel({obsConceptUuid:"durationConceptUuid",isCheckbox:true,checkboxValue:"100"}),
                 templateOptions: {
                     type: 'text',
                     label: 'Duration',
@@ -142,7 +191,7 @@
 
 
             {
-                className: 'obsGroup1',
+                //className: 'obsGroup1',
                 fieldGroup: [
                     {
                         key: 'value',
@@ -163,7 +212,7 @@
                         }
                     },
                     {
-                        key: 'value',
+                        key: 'checked',
                         type: 'input',
                         model: getModel({obsConceptUuid:"doseConceptUuid",obsGroupUuid:"orderUuid",groupName:"obsGroup1"}),
                         templateOptions: {
