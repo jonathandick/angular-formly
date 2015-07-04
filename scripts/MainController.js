@@ -38,11 +38,6 @@
         //var o, obs;
 
 
-        function getLast(array) {
-            return array[array.length-1];
-        }
-
-
         function getFirstNonLoaded(obsSet,params) {
             var result, fieldDef;
             _.each(obsSet,function(e) {
