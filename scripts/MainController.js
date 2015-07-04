@@ -40,11 +40,11 @@
 
         function getFirstNonLoaded(obsSet,params) {
             var result, fieldDef;
-            _.each(obsSet,function(e) {
+            _.find(obsSet,function(e) {
                 if(e.loaded === undefined) {
                     if(!params.isCheckbox || (params.isCheckbox && e.value === params.checkboxValue)) {
                         result = e;
-                        return;
+                        return result;
                     }
                 }
             });
