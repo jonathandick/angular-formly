@@ -8,10 +8,9 @@
         .module('formlyApp')
         .controller('MainController', MainController);
 
-    function MainController() {
+    function MainController($scope) {
 
         var vm = this;
-
         // The model object that we reference
         // on the  element in index.html
         vm.model = {
@@ -19,7 +18,9 @@
             {
                 "durationConceptUuid":
                     [
-                        {uuid:"12345", "concept":"durationConceptUuid","value":"100"}
+                        {uuid:"1", "concept":"durationConceptUuid","value":"100"},
+                        {uuid:"2", "concept":"durationConceptUuid","value":"200"},
+                        {uuid:"3", "concept":"durationConceptUuid","value":"300"}
                     ],
                 "orderUuid":
                 {
@@ -34,7 +35,7 @@
                 }
             }
         };
-        var o, obs;
+        //var o, obs;
 
 
         function getLast(array) {
@@ -58,6 +59,7 @@
 
         function getModelForObsConcept(obsGroup,params) {
             var m;
+            var field;
             var obs = {concept:params.obsConceptUuid};
             if(params.isCheckbox) obs.value = params.checkboxValue;
 
@@ -70,19 +72,8 @@
                 else {
                     m = getFirstNonLoaded(obsGroup[params.obsConceptUuid], params);
                     if (m === undefined) {
-
-                        /*
-                        ** NEED TO ADD WAY TO ADD FIELD IF IN MODEL BUT NOT IN FIELDSET, E.G. A FIELD WAS ADDED
-                        ** AT DATA ENTRY TIME
-                        _.each(vm.fields,function(f){
-                            console.log(f);
-                            if(f.uuid !== undefined) console.log(f.uuid);
-                        });
-                        */
-
                         obsGroup[params.obsConceptUuid].push(obs);
                         m = obs;
-
                     }
                     else {
                         if (params.isCheckbox) m.checked = true;
@@ -133,10 +124,41 @@
         }
 
 
-        vm.addField = function(fieldDef) {
-            vm.fields.push(fieldDef);
+        function cloneField(field,fields,params) {
+            params.addField = true;
+            var lastIndex = 0;
+            var clone = angular.copy(field);
+            delete clone.value;
+            delete clone.loaded;
+            delete clone.initialValue;
+            clone.model = getModel(params)
+
+
+            _.each(fields,function(e,i) {
+                if(e.templateOptions && e.templateOptions.obsConceptUuid === params.obsConceptUuid) {
+                    lastIndex = i;
+                }
+            })
+            fields.splice(lastIndex+1,0,clone);
         }
 
+        vm.repeatField = function(params) {
+            console.log("adding field");
+            params = {obsConceptUuid:"durationConceptUuid"};
+            var field;
+            if("obsGroupUuid" in params) {
+
+            }
+            else {
+                _.find(vm.fields,function(f){
+                    if(f.templateOptions && f.templateOptions.obsConceptUuid === params.obsConceptUuid) {
+                        cloneField(f,vm.fields,params);
+                        return f;
+                    }
+                })
+            }
+
+        }
 
         vm.buildOpenmrsRestPayload = function(formObs) {
             var payload = [];
@@ -154,7 +176,7 @@
 
         var f =
         {
-            uuid:'uuid',
+            obsConceptUuid:'conceptUuid',
             groupUuid:'groupUuid',
             label:'label',
             type:'checkbox',
@@ -164,16 +186,58 @@
         }
 
 
+
+        function createField(fieldDef) {
+            var f = {
+                key:"value",
+                type: "input",
+                model:"",
+                templateOptions:{
+                    type:"text"
+                }
+            };
+
+            if(fieldDef.type === "checkBox") {
+                f.key = "checked";
+                f.templateOptions.type = "checkbox";
+                f.model = getModel(
+                    {
+                        obsConceptUuid: fieldDef.obsConceptUuid,
+                        isCheckbox: true,
+                        checkboxValue: fieldDef.checkboxValue
+                    }
+                );
+            }
+            else if(fieldDef.type === "select") {
+                f.templateOptions.type = "select";
+                f.templateOptions.options = fieldDef.options;
+            }
+            else if(fieldDef.type === "text") {
+                f.model = getModel(
+                    {
+                        obsConceptUuid:""
+                    }
+                )
+            }
+            if(fieldDef.validators) {
+                f.validators = fieldDef.validators;
+            }
+
+        }
+
+
         vm.fields = [
             {
                 key: 'value',
                 type: 'input',
                 model: getModel({obsConceptUuid:"durationConceptUuid",isCheckbox:true,checkboxValue:"100"}),
                 templateOptions: {
+                    obsConceptUuid : "durationConceptUuid",
                     type: 'text',
                     label: 'Duration',
                     placeholder: 'Enter duration',
-                    required: true
+                    required: true,
+                    uuid:'durationConceptUuid'
                 }
             },
 
@@ -182,6 +246,7 @@
                 type: 'input',
                 model: getModel({obsConceptUuid:"durationConceptUuid"}),
                 templateOptions: {
+                    obsConceptUuid : "durationConceptUuid",
                     type: 'text',
                     label: 'Duration',
                     placeholder: 'Enter duration',
@@ -212,7 +277,7 @@
                         }
                     },
                     {
-                        key: 'checked',
+                        key: 'value',
                         type: 'input',
                         model: getModel({obsConceptUuid:"doseConceptUuid",obsGroupUuid:"orderUuid",groupName:"obsGroup1"}),
                         templateOptions: {

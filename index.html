@@ -13,7 +13,7 @@
     <form novalidate>
         <h1>Medicine OrderSet </h1>
         <pre>{{vm.model}}</pre>
-        <button ng-click="vm.buildOpenmrsRestPayload()" value="add field"></button>
+        <button ng-click="vm.repeatField()">Add Field</button>
         <formly-form model="vm.model" fields="vm.fields" form="vm.orderForm">
             <button type="submit" class="btn btn-primary" ng-disabled="vm.orderForm.$invalid">Submit</button>
         </formly-form>
