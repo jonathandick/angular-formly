@@ -6,6 +6,8 @@
 
     'use strict';
 
-    angular.module('formlyApp', ['formly', 'formlyBootstrap']);
-
+    var app = angular.module('formlyApp', ['formly', 'formlyBootstrap']);
+    app.run(function(formlyConfig, formlyValidationMessages) {
+        formlyConfig.extras.errorExistsAndShouldBeVisibleExpression = 'fc.$touched || form.$submitted';
+    });
 })();

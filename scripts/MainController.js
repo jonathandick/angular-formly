@@ -226,11 +226,64 @@
         }
 
 
-        vm.fields = [
+        vm.submit = function() {
+            console.log("invalid: " + $scope.vm.orderForm2.$invalid);
+        }
+
+        vm.fields2 = [
             {
                 key: 'value',
                 type: 'input',
-                model: getModel({obsConceptUuid:"durationConceptUuid",isCheckbox:true,checkboxValue:"100"}),
+                model: getModel({obsConceptUuid:"hivConceptUuid"}),
+                templateOptions: {
+                    obsConceptUuid : "hivConceptUuid",
+                    type: 'text',
+                    label: 'HIV Status:',
+                    placeholder: 'Enter hiv status',
+                    required: true,
+                },
+                validators: {
+                    foo: function($viewValue,$modelValue,scope) {
+                        return ($viewValue === "300");
+                    }
+                }
+
+            },
+            {
+                className: 'obsGroup2',
+                fieldGroup: [
+                    {
+                        key: 'value',
+                        model: getModel({obsConceptUuid:"medicineConceptUuid",obsGroupUuid:"orderUuid",groupName:"obsGroup2"}),
+                        type: 'input',
+                        templateOptions: {
+                            type: 'text',
+                            label: 'Medicine',
+                            placeholder: 'Enter medicine',
+                            required: true
+                        }
+                    },
+                    {
+                        key: 'value',
+                        type: 'input',
+                        model: getModel({obsConceptUuid:"doseConceptUuid",obsGroupUuid:"orderUuid",groupName:"obsGroup2"}),
+                        templateOptions: {
+                            type: 'text',
+                            label: 'Dose',
+                            placeholder: 'Enter dose',
+                            required: true
+                        }
+                    }
+
+                ]
+            }
+
+        ]
+            vm.fields = [
+            {
+                key: 'value',
+                type: 'input',
+                model: getModel({obsConceptUuid:"durationConceptUuid"}),
                 templateOptions: {
                     obsConceptUuid : "durationConceptUuid",
                     type: 'text',
@@ -238,7 +291,18 @@
                     placeholder: 'Enter duration',
                     required: true,
                     uuid:'durationConceptUuid'
+                },
+                validators: {
+                    foo: function($viewValue,$modelValue,scope) {
+                        if (scope.fc)
+                            console.log("invalid: " + scope.fc.$invalid);//.fc.$invalid);
+
+                        console.log($viewValue);
+                        return true;
+                    }
                 }
+
+
             },
 
             {
