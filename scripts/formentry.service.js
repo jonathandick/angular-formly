@@ -1,45 +1,16 @@
-// scripts/MainController.js
+
 
 (function() {
-
     'use strict';
 
     angular
-        .module('formlyApp')
-        .controller('MainController', MainController);
+        .module('formEntryModule')
+        .factory("FormEntryService",FormEntryService);
 
-    function MainController($scope) {
-
+    function FormEntryService() {
         var vm = this;
-        // The model object that we reference
-        // on the  element in index.html
-        vm.model = {
-            "obs":
-            {
-                "durationConceptUuid":
-                    [
-                        {uuid:"1", "concept":"durationConceptUuid","value":"100"},
-                        {uuid:"2", "concept":"durationConceptUuid","value":"200"},
-                        {uuid:"3", "concept":"durationConceptUuid","value":"300"}
-                    ],
-                "orderUuid":
-                {
-                    "obsGroup1":
-                    {
-                        "concept":"orderUuid",
-                        "obs": {
-                            medicineConceptUuid: [{uuid:"1987293", "concept": "medicineConceptUuid", "value": "quinineUuid"}],
-                            doseConceptUuid: [{uuid:"3298098", "concept": "doseConceptUuid", "value": "500mg", checked:true}]
-                        }
-                    }
-                }
-            }
-        };
-        //var o, obs;
-
-
         function getFirstNonLoaded(obsSet,params) {
-            var result, fieldDef;
+            var result;
             _.find(obsSet,function(e) {
                 if(e.loaded === undefined) {
                     if(!params.isCheckbox || (params.isCheckbox && e.value === params.checkboxValue)) {
@@ -109,12 +80,12 @@
         }
 
 
-        function getModel(params) {
+        vm.getModel = function(model,params) {
             if(params.obsGroupUuid !== undefined) {
-                return getModelForObsGroup(vm.model.obs,params);
+                return getModelForObsGroup(model.obs,params);
             }
             else {
-                return getModelForObsConcept(vm.model.obs,params);
+                return getModelForObsConcept(model.obs,params);
             }
         }
 
@@ -155,15 +126,47 @@
 
         }
 
-        vm.buildOpenmrsRestPayload = function(formObs) {
+
+        function restObsToModel(model,restObs){
+            if(model[restObs.concept]) {
+                model[restObs.concept].push(restObs);
+            }
+            else model[restObs.concept] = [restObs];
+        }
+
+
+        vm.restResultToModel = function(restResult) {
+            var model = {obs:{}};
+            var l;
+            _.each(restResult.obs,function(o) {
+                var groupObs ={};
+                if(o.obs) {
+                    groupObs = {uuid: o.uuid, concept: o.concept, obs:{}};
+                    _.each(o.obs,function(p) {
+                        restObsToModel(groupObs.obs,p);
+                    });
+                    if(model.obs[o.concept]) {
+                        l = "obsGroup" + (model.obs[o.concept].length + 1);
+                        model.obs[o.concept][l] = groupObs;
+                    }
+                    else {
+                        model.obs[o.concept] = {"obsGroup1":groupObs};
+                    }
+                }
+                else {
+                    restObsToModel(model.obs,o);
+                }
+            })
+            return model;
+        };
+
+        vm.toOpenmrsRestPayload = function(formObs) {
             var payload = [];
             // Need to write code
             return payload;
         }
 
-        vm.loadOpenmrsRestResult = function(restResult) {
 
-        }
 
         // An array of our form fields with configuration
         // and options set. We make reference to this in
@@ -179,7 +182,6 @@
             checkboxValue:"value",
             placeholder:'placeHolder',
         }
-
 
 
         function createField(fieldDef) {
@@ -221,60 +223,8 @@
         }
 
 
-        vm.submit = function() {
-            console.log("invalid: " + $scope.vm.orderForm2.$invalid);
-        }
-
+        /*
         vm.fields2 = [
-            {
-                key: 'value',
-                type: 'input',
-                model: getModel({obsConceptUuid:"hivConceptUuid"}),
-                templateOptions: {
-                    obsConceptUuid : "hivConceptUuid",
-                    type: 'text',
-                    label: 'HIV Status:',
-                    placeholder: 'Enter hiv status',
-                    required: true,
-                },
-                validators: {
-                    foo: function($viewValue,$modelValue,scope) {
-                        return ($viewValue === "300");
-                    }
-                }
-
-            },
-            {
-                className: 'obsGroup2',
-                fieldGroup: [
-                    {
-                        key: 'value',
-                        model: getModel({obsConceptUuid:"medicineConceptUuid",obsGroupUuid:"orderUuid",groupName:"obsGroup2"}),
-                        type: 'input',
-                        templateOptions: {
-                            type: 'text',
-                            label: 'Medicine',
-                            placeholder: 'Enter medicine',
-                            required: true
-                        }
-                    },
-                    {
-                        key: 'value',
-                        type: 'input',
-                        model: getModel({obsConceptUuid:"doseConceptUuid",obsGroupUuid:"orderUuid",groupName:"obsGroup2"}),
-                        templateOptions: {
-                            type: 'text',
-                            label: 'Dose',
-                            placeholder: 'Enter dose',
-                            required: true
-                        }
-                    }
-
-                ]
-            }
-
-        ]
-            vm.fields = [
             {
                 key: 'value',
                 type: 'input',
@@ -350,11 +300,11 @@
             },
 
             {
-                className: 'obsGroup2',
+                className: 'obsGroup1',
                 fieldGroup: [
                     {
                         key: 'value',
-                        model: getModel({obsConceptUuid:"medicineConceptUuid",obsGroupUuid:"orderUuid",groupName:"obsGroup2"}),
+                        model: getModel({obsConceptUuid:"medicineConceptUuid",obsGroupUuid:"orderUuid",groupName:"obsGroup1"}),
                         type: 'input',
                         templateOptions: {
                             type: 'text',
@@ -366,7 +316,7 @@
                     {
                         key: 'value',
                         type: 'input',
-                        model: getModel({obsConceptUuid:"doseConceptUuid",obsGroupUuid:"orderUuid",groupName:"obsGroup2"}),
+                        model: getModel({obsConceptUuid:"doseConceptUuid",obsGroupUuid:"orderUuid",groupName:"obsGroup1"}),
                         templateOptions: {
                             type: 'text',
                             label: 'Dose',
@@ -378,7 +328,7 @@
                 ]
             },
         ];
-
+*/
+        return vm;
     }
-
 })();
